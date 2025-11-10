@@ -1,5 +1,5 @@
 EXE=_build/default/mgoc.exe
-ZIP=ROOY.zip
+ZIP=code.zip
 all: $(EXE)
 
 zip:
