@@ -9,6 +9,7 @@ type typ =
   | TBool
   | TString
   | TStruct of string
+[@@deriving show]
 
 let typ_to_string = function
   | TInt -> "int"
@@ -20,6 +21,7 @@ let typ_to_string = function
 type unop =
   | Opp
   | Not
+[@@deriving show]
 
 type binop =
   | Add
@@ -35,12 +37,14 @@ type binop =
   | Neq
   | And
   | Or
-
+[@@deriving show]
 (* Pour la localisation des erreurs de typage les positions de début et de fin
    des expressions sont conservées dans l'ast
    ils sont construits à l'aide des références $startpos et $endpos
    dans les actions de la grammaire
 *)
+
+let pp_location _ _ = ()
 
 type location = Lexing.position * Lexing.position
 
@@ -48,12 +52,14 @@ type ident =
   { loc : location
   ; id : string
   }
+[@@deriving show]
 
 (* Expressions *)
 type expr =
   { edesc : expr_desc
   ; eloc : location
   }
+[@@deriving show]
 
 and expr_desc =
   (* Base arithmétique et logique *)
@@ -73,12 +79,14 @@ and expr_desc =
   | Call of ident * expr list
   (* Fonction primitive pour impression *)
   | Print of expr list
+[@@deriving show]
 
 (* Instructions *)
 type instr =
   { idesc : instr_desc
   ; iloc : location
   }
+[@@deriving show]
 
 and instr_desc =
   (* Écriture dans une variable ou un attribut *)
@@ -90,13 +98,14 @@ and instr_desc =
   | For of expr * seq
   | Block of seq
   (* Déclaration de variable locales *)
-  | Vars of ident list * typ option * seq
+  | Vars of ident list * typ option * expr list
   (* Fin d'une fonction *)
   | Return of expr list
   (* Expression utilisée comme instruction *)
   | Expr of expr
+[@@deriving show]
 
-and seq = instr list
+and seq = instr list [@@deriving show]
 
 (* Définition de fonction 
 
@@ -109,17 +118,19 @@ type func_def =
   ; return : typ list
   ; body : seq
   }
+[@@deriving show]
 
 (* Définition de structures : nom et déclaration des champs *)
 type struct_def =
   { sname : ident
   ; fields : (ident * typ) list
   }
+[@@deriving show]
 
 type decl =
   | Fun of func_def
   | Struct of struct_def
-
+[@@deriving show]
 (* Programme complet : indication de l'import de fmt + liste de déclarations *)
 
-type program = bool * decl list
+type program = bool * decl list [@@deriving show]

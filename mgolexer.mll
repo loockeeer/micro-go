@@ -6,47 +6,96 @@
 
   let keyword_or_ident =
   let h = 
-    Hashtbl.create 17
+    Hashtbl.create 20
   in
   List.iter (fun (s, k) -> Hashtbl.add h s k)
     [ "package",    PACKAGE;
       "import",     IMPORT;
       "type",       TYPE;      
-      "struct",     STRUCT;      
+      "struct",     STRUCT;
+      "else",       ELSE;
+      "if",         IF;
+      "for",        FOR;
+      "false",      FALSE;
+      "true",       TRUE;
+      "return",     RETURN;
+      "func",       FUNC;
+      "var",        VAR;
+      "nil",        NIL;
+
+      "int",        TINT;
+      "bool",       TBOOL;
+      "string",     TSTRING;
+
+      "fmt",        FMT;
+      "Print",      PRINT;
     ] ;
   fun s ->
     try  Hashtbl.find h s
     with Not_found -> IDENT(s);;
+
+  let last_token_skip = ref false;;
+  let ms () = last_token_skip := true;;
+  let nms () = last_token_skip := false;;
 }
 
 let digit = ['0'-'9']
-let number = digit+
+let hexa = ['0'-'9' 'a'-'f' 'A'-'F']
+let number = digit+ | (('0' ('x' | 'X')) hexa+)
 let alpha = ['a'-'z' 'A'-'Z' '_']
+let char = ([' '-'~'] # ['\\' '"']) | ("\\\\" | "\\\"" | "\\n" | "\\t")
 let ident = alpha (alpha | digit)*
 let fmt = "fmt" 
-  
+
 rule token =
   parse
-  | ['\n']            { new_line lexbuf; token lexbuf }
-  | [' ' '\t' '\r']+  { token lexbuf }
+  | ['\n']                        { 
+      new_line lexbuf;
+      if !last_token_skip 
+      then (nms(); SEMI) 
+      else (nms();token lexbuf) 
+}
+  | [' ' '\t' '\r']+              { token lexbuf }
 
-  | "/*"              { comment lexbuf; token lexbuf }
-
-  | '"' fmt '"'       { STRING("fmt") }
-
-  | number as n  { try INT(Int64.of_string n) 
+  | '"' fmt '"'                   { ms(); STRING("fmt") }
+  | '"' char* as chaine '"'       { ms(); STRING(chaine) }
+  | number as n  { try ms(); INT(Int64.of_string n) 
                    with _ -> raise (Error "literal constant too large") }
-  | ident as id  { keyword_or_ident id }
+  | ident as id  { let kw = keyword_or_ident id in 
+  (match kw with
+  | RETURN | TRUE | FALSE | NIL | IDENT _ -> ms()
+  | _ -> nms());
+  kw }
 
-  | ";"  { SEMI }
-  | "("  { LPAR }
-  | ")"  { RPAR }
-  | "{"  { BEGIN }
-  | "}"  { END }
-  | "*"  { STAR }
-
+  | ";"  { nms(); SEMI }
+  | "("  { nms(); LPAR }
+  | ")"  { ms (); RPAR }
+  | "{"  { nms(); BEGIN }
+  | "}"  { ms (); END }
+  | "*"  { nms(); STAR }
+  | "++" { ms (); INCR }
+  | "--" { ms (); DECR }
+  | "==" { nms(); EQ }
+  | "!=" { nms(); NEQ }
+  | "<"  { nms(); LT }
+  | "<=" { nms(); LE }
+  | ">"  { nms(); GT }
+  | ">=" { nms(); GE }
+  | "+"  { nms(); PLUS }
+  | "-"  { nms(); MINUS }
+  | "%"  { nms(); PERCENT }
+  | "&&" { nms(); AMPAMP }
+  | "||" { nms(); PIPEPIPE }
+  | "."  { nms(); DOT }
+  | "!"  { nms(); BANG }
+  | ","  { nms(); COMMA }
+  | ":=" { nms(); DEFSET }
+  | "="  { nms(); SET }
+  | "//" (_ # '\n')* "\n" { nms(); new_line lexbuf; token lexbuf }
+  | "/*" { nms();comment lexbuf; token lexbuf }
+  | "/"  { nms(); SLASH }
+  | eof  { nms(); EOF }
   | _    { raise (Error ("unknown character : " ^ lexeme lexbuf)) }
-  | eof  { EOF }
 
 and comment = parse
   | '\n' { new_line lexbuf; comment lexbuf }

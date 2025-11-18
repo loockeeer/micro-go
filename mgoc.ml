@@ -38,6 +38,7 @@ let () =
   try
     let f = Mgoparser.prog Mgolexer.token lb in
     close_in c;
+    print_endline (Mgoast.show_program f);
     if !parse_only then exit 0;
     let f = Typechecker.prog f in
     if !type_only then exit 0
@@ -53,6 +54,9 @@ let () =
   | Typechecker.Error (l, msg) ->
     report_loc l;
     eprintf "error: %s\n@." msg;
+    exit 1
+  | _ ->
+    report_loc (lexeme_start_p lb, lexeme_end_p lb);
     exit 1
   | e ->
     eprintf "Anomaly: %s\n@." (Printexc.to_string e);
