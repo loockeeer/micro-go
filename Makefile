@@ -10,7 +10,11 @@ $(EXE): *.ml*
 
 test: $(EXE) tests/test.go
 	-./$(EXE) --parse-only tests/test.go
-
+	-./$(EXE) --parse-only tests/var.go
+	-./$(EXE) --parse-only tests/min.go
+	-./$(EXE) --parse-only tests/div.go
+	-./$(EXE) --parse-only tests/arith.go
+	-./$(EXE) --parse-only tests/point.go
 .PHONY: clean
 clean:
 	dune clean
