@@ -4,10 +4,11 @@ open Lexing
 let usage = "usage: mgoc [options] file.go"
 let parse_only = ref false
 let type_only = ref true
-
+let verbose = ref false
 let spec =
   [ "--parse-only", Arg.Set parse_only, "  stops after parsing"
   ; "--type-only", Arg.Set type_only, "  stops after typing"
+  ; "--verbose", Arg.Set verbose, "  prints AST"
   ]
 ;;
 
@@ -38,7 +39,7 @@ let () =
   try
     let f = Mgoparser.prog Mgolexer.token lb in
     close_in c;
-    print_endline (Mgoast.show_program f);
+    if !verbose then print_endline (Mgoast.show_program f);
     if !parse_only then exit 0;
     let f = Typechecker.prog f in
     if !type_only then exit 0
