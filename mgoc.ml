@@ -5,6 +5,7 @@ let usage = "usage: mgoc [options] file.go"
 let parse_only = ref false
 let type_only = ref true
 let verbose = ref false
+
 let spec =
   [ "--parse-only", Arg.Set parse_only, "  stops after parsing"
   ; "--type-only", Arg.Set type_only, "  stops after typing"
@@ -56,10 +57,8 @@ let () =
     report_loc l;
     eprintf "error: %s\n@." msg;
     exit 1
-  | _ ->
-    report_loc (lexeme_start_p lb, lexeme_end_p lb);
-    exit 1
   | e ->
+    report_loc (lexeme_start_p lb, lexeme_end_p lb);
     eprintf "Anomaly: %s\n@." (Printexc.to_string e);
     exit 2
 ;;

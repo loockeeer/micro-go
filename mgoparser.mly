@@ -27,7 +27,7 @@
 
 %token LPAR RPAR BEGIN END SEMI COMMA
 
-%token IF ELSE FMT PRINT SET DEFSET FOR VAR RETURN INCR DECR
+%token IF ELSE FMT PRINT NEW SET DEFSET FOR VAR RETURN INCR DECR
 
 %token TRUE FALSE NIL TINT TBOOL TSTRING
 
@@ -165,6 +165,7 @@ expr:
   | e=expr DOT i=ident { { eloc=$startpos,$endpos; edesc=Dot(e,i) } }
   | FMT DOT PRINT LPAR args=separated_list(COMMA,expr) RPAR { {eloc=$startpos,$endpos;edesc=Print(args)} }
   | i=ident LPAR args=separated_list(COMMA,expr) RPAR { { eloc=$startpos,$endpos; edesc=Call(i,args) } }
+  | NEW LPAR i=IDENT RPAR { {eloc=$startpos,$endpos; edesc=New(i)} }
   | BANG e=expr { { eloc=$startpos,$endpos; edesc=Unop(Not,e) } }
   | MINUS e=expr { { eloc=$startpos,$endpos; edesc=Unop(Opp,e) } } %prec UMINUS
   | e1=expr op=binop e2=expr { { eloc=$startpos,$endpos; edesc=Binop(op,e1,e2) } }

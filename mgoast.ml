@@ -38,13 +38,19 @@ type binop =
   | And
   | Or
 [@@deriving show]
+
 (* Pour la localisation des erreurs de typage les positions de début et de fin
    des expressions sont conservées dans l'ast
    ils sont construits à l'aide des références $startpos et $endpos
    dans les actions de la grammaire
 *)
-
-let pp_location _ _ = ()
+let pp_location ppf (b, e) =
+  let open Lexing in
+  let l = b.pos_lnum in
+  let fc = b.pos_cnum - b.pos_bol in
+  let lc = e.pos_cnum - b.pos_bol in
+  Format.fprintf ppf "%d,%d-%d" l fc lc
+;;
 
 type location = Lexing.position * Lexing.position
 

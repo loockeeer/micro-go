@@ -29,14 +29,15 @@
 
       "fmt",        FMT;
       "Print",      PRINT;
+      "new",        NEW;
     ] ;
   fun s ->
     try  Hashtbl.find h s
     with Not_found -> IDENT(s);;
 
-  let last_token_skip = ref false;;
-  let ms () = last_token_skip := true;;
-  let nms () = last_token_skip := false;;
+  let candidate_for_semi = ref false;;
+  let ms () = candidate_for_semi := true;;
+  let nms () = candidate_for_semi := false;;
 }
 
 let digit = ['0'-'9']
@@ -51,7 +52,7 @@ rule token =
   parse
   | ['\n']                        { 
       new_line lexbuf;
-      if !last_token_skip 
+      if !candidate_for_semi 
       then (nms(); SEMI) 
       else (nms();token lexbuf) 
 }

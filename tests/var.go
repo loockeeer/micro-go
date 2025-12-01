@@ -1,6 +1,10 @@
 package main;
 import "fmt";
 
+func f(a int) (int, int) {
+	fmt.Print(a);
+}
+
 // Résultat attendu 42
 func main() {
      var x, y int;
@@ -10,4 +14,3 @@ func main() {
        y = y*(x+4);
        fmt.Print(y)
 };
-
