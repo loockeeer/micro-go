@@ -359,5 +359,6 @@ let prog (_, ld) =
     à la fin de l'exécution d'une fonctione *)
   in
   Env.iter (fun _ lf -> check_fields lf) senv;
-  Env.iter (fun _ (params, seq, ret) -> check_function params seq ret) fenv
+  Env.iter (fun _ (params, seq, ret) -> check_function params seq ret) fenv;
+  ld
 ;;
