@@ -25,14 +25,9 @@
         pname = "micro-go";
         version = "1.0.0";
 
-        minimalOCamlVersion = "4.02";
+        minimalOCamlVersion = "5.2.1";
 
         src = ./.;
-
-        meta = {
-          homepage = "https://github.com/loockeeer/micro-go";
-          description = "Class project";
-        };
       };
     };
 }
