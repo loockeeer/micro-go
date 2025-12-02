@@ -69,5 +69,3 @@ let print_program fmt p =
     print_asm fmt p.text;
     fprintf fmt ".data\n";
     print_asm fmt p.data
-
-

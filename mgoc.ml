@@ -43,7 +43,9 @@ let () =
     if !verbose then print_endline (Mgoast.show_program f);
     if !parse_only then exit 0;
     let f = Typechecker.prog f in
-    if !type_only then exit 0
+    if !type_only then exit 0;
+    let c = Compile.tr_prog f in
+    Mips.print_program stdout c
   with
   | Mgolexer.Error s ->
     report_loc (lexeme_start_p lb, lexeme_end_p lb);
