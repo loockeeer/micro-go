@@ -54,10 +54,6 @@ let member_not_found loc mem sname fields =
       (Printf.sprintf "undefined member %s in struct %s. Did you mean %s ?" mem sname v)
 ;;
 
-let left_right_dontmatch loc =
-  error loc (Printf.sprintf "left and right values count do not match")
-;;
-
 let rec combine_fold f acc l1 l2 =
   match l1, l2 with
   | [], [] -> acc
@@ -76,8 +72,9 @@ let env_keys e = Env.fold (fun k _ acc -> k :: acc) e []
 *)
 
 type tenv = typ Env.t
-type fenv = (ident * typ) list * seq * typ list Env.t (* TODO: README *)
-type senv = (ident * typ) list
+type fenv = ident * (ident * typ) list * seq * typ list Env.t (* TODO: README *)
+type senv = (ident * typ * int) list (* l'entier à la fin = le décalage pour
+ce champ *)
 
 let dummy = "_"
 
@@ -91,8 +88,10 @@ let prog (_, ld) =
     List.fold_left
       (fun (fenv, senv) d ->
          match d with
-         | Struct s -> fenv, Env.add s.sname.id s.fields senv
-         | Fun f -> Env.add f.fname.id (f.params, f.body, f.return) fenv, senv)
+         | Struct s -> 
+                 (* Si c'est une structure, on l'ajoute avec le décalage de chaque champ *)
+                 fenv, Env.add s.sname.id (List.mapi (fun i (id, typ) -> id, typ, 4*i) s.fields) senv
+         | Fun f -> Env.add f.fname.id (f.fname, f.params, f.body, f.return) fenv, senv)
       (Env.empty, Env.empty)
       ld
   in
@@ -109,14 +108,14 @@ let prog (_, ld) =
     match Env.find_opt s senv with
     | None -> failwith "runtime error" (* N'arrive pas *)
     | Some members ->
-      (match List.find_opt (fun ({ id; _ }, _) -> id = f.id) members with
-       | None -> member_not_found f.loc f.id s (List.map (fun x -> (fst x).id) members)
-       | Some t -> snd t)
+      (match List.find_opt (fun ({ id; _ }, _, _) -> id = f.id) members with
+       | None -> member_not_found f.loc f.id s (List.map (fun ({id;_}, _, _) -> id) members)
+       | Some (_, typ, _) -> typ)
   in
   let rec check_fields lf =
     match lf with
     | [] -> ()
-    | (ident, t) :: tail ->
+    | (ident, t, _) :: tail ->
       if check_typ t then () else type_not_found ident.loc ident.id;
       check_fields tail
   in
@@ -136,7 +135,7 @@ let prog (_, ld) =
   and check_call (f, params) ret tenv =
     match Env.find_opt f.id fenv with
     | None -> undefined_function f.loc f.id
-    | Some (ptypes, _, rtypes) ->
+    | Some (_, ptypes, _, rtypes) ->
       if rtypes <> ret
       then failwith "non-matching types"
       else (
@@ -148,7 +147,7 @@ let prog (_, ld) =
     (* Attention, renvoie une liste de types ! *)
     match Env.find_opt f.id fenv with
     | None -> undefined_function f.loc f.id
-    | Some (ptypes, _, rtypes) ->
+    | Some (_, ptypes, _, rtypes) ->
       (match params with
        | [ { edesc = Call (f2, p2); _ } ] ->
          check_call (f2, p2) (List.map snd ptypes) tenv
@@ -328,7 +327,11 @@ let prog (_, ld) =
       check_expr expr TBool tenv;
       check_seq seq ret tenv |> ignore;
       tenv
-    | Inc expr | Dec expr ->
+    | Inc expr ->
+      check_lvalue expr;
+      check_expr expr TInt tenv;
+      tenv
+    | Dec expr ->
       check_lvalue expr;
       check_expr expr TInt tenv;
       tenv
@@ -352,13 +355,30 @@ let prog (_, ld) =
   and check_seq s ret tenv =
     List.fold_left (fun tenv i -> check_instr i ret tenv) tenv s
   in
-  let check_function params seq ret =
+  let rec check_returns seq =
+    match seq with
+    | [] -> false
+    | [ { idesc = Return _; _ } ] -> true
+    | { idesc = Block []; _ } :: tail -> check_returns tail
+    | { idesc = Block (h :: t); iloc } :: tail ->
+      check_returns (h :: { idesc = Block t; iloc } :: tail)
+    | { idesc = If (_, t, e); _ } :: tail ->
+      check_returns tail || (check_returns t && check_returns e)
+    | _ :: tail -> check_returns tail
+  in
+  let check_function fname params seq ret =
     let env = add_env (List.map (fun (i, t) -> i.id, t) params) Env.empty in
-    check_seq seq ret env |> ignore
+    check_seq seq ret env |> ignore;
+    if ret <> [] && not (check_returns seq)
+    then
+      error
+        fname.loc
+        (Printf.sprintf "returning function %s missing a return statement" fname.id)
+    else ()
     (* On ne soucie pas de l'environnement
     à la fin de l'exécution d'une fonctione *)
   in
   Env.iter (fun _ lf -> check_fields lf) senv;
-  Env.iter (fun _ (params, seq, ret) -> check_function params seq ret) fenv;
+  Env.iter (fun _ (decl, params, seq, ret) -> check_function decl params seq ret) fenv;
   ld
 ;;

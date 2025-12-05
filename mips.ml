@@ -3,9 +3,20 @@ type asm =
     | S of string
     | C of asm * asm
 
-let (@@) x y = C (x, y)
 
 type program = { text: asm; data: asm; }
+
+(* Autres fonctions de concaténation, permettent de gérer la propagation
+   des données en compilant le programme
+   Le dollar signifie qu'il y a un programme de son côté, et pas juste de
+   l'assembleur 
+   Ainsi c'est assez intuitif à utiliser *)
+let ($@@) (x:asm * asm) y = C (fst x, y), snd x
+let (@@$) x (y: asm * asm) = C (x, fst y), snd y
+let ($@@$) (x: asm * asm) (y: asm * asm) = C (fst x, fst y), C (snd x, snd y)
+let (@@) x y = C (x,y)
+
+let temp_registers = [|"$t0"; "$t1"; "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"|]
 
 let t0 = "$t0"
 let t1 = "$t1"
@@ -13,6 +24,8 @@ let a0 = "$a0"
 let v0 = "$v0"
 let sp = "$sp"
 let ra = "$ra"
+let fp = "$fp"
+let free_reg = "$t7"
 
 open Printf
 let li   r1 i      = S(sprintf "  li   %s, %i"     r1 i)
@@ -20,10 +33,26 @@ let la   r1 x      = S(sprintf "  la   %s, %s"     r1 x)
 let move r1 r2     = S(sprintf "  move %s, %s"     r1 r2)
 
 let add  r1 r2 r3  = S(sprintf "  add  %s, %s, %s" r1 r2 r3)
+let sub  r1 r2 r3  = S(sprintf "  sub  %s, %s, %s" r1 r2 r3)
 let addi r1 r2 i   = S(sprintf "  addi %s, %s, %d" r1 r2 i)
 let mul  r1 r2 r3  = S(sprintf "  mul  %s, %s, %s" r1 r2 r3)
+let div  r1 r2 r3  = S(sprintf "  div  %s, %s, %s" r1 r2 r3)
+
+let rem  r1 r2 r3  = S(sprintf "  rem  %s, %s, %s" r1 r2 r3)
 let slt  r1 r2 r3  = S(sprintf "  slt  %s, %s, %s" r1 r2 r3)
 let and_ r1 r2 r3  = S(sprintf "  and  %s, %s, %s" r1 r2 r3)
+let or_  r1 r2 r3  = S(sprintf "  or   %s, %s, %s" r1 r2 r3)
+
+let sle  r1 r2 r3  = S(sprintf "  sle  %s, %s, %s" r1 r2 r3)
+let sge  r1 r2 r3  = S(sprintf "  sge  %s, %s, %s" r1 r2 r3)
+let sgt  r1 r2 r3  = S(sprintf "  sgt  %s, %s, %s" r1 r2 r3)
+
+let seq  r1 r2 r3  = S(sprintf "  seq  %s, %s, %s" r1 r2 r3)
+let sne  r1 r2 r3  = S(sprintf "  sne  %s, %s, %s" r1 r2 r3)
+
+
+let not_ r1 r2     = S(sprintf "  not  %s, %s"     r1 r2)
+let opp  r1 r2     = S(sprintf "  neg  %s, %s"     r1 r2)
 
 let j    l         = S(sprintf "  j    %s"         l)
 let jal  l         = S(sprintf "  jal  %s"         l)
@@ -55,6 +84,22 @@ let push r =
     addi sp sp (-4) @@ sw r 0(sp)
 let pop r =
     lw r 0(sp) @@ addi sp sp 4
+
+let (vpush, vpop) =
+    let vstack_cpt = ref 1 in
+    let vpush r =
+        let ret = if !vstack_cpt > 6 then (* on réserve le registre t7 pour GetReg/SetReg *)
+            push r
+        else move temp_registers.(!vstack_cpt + 1) r in
+        vstack_cpt := !vstack_cpt + 1;
+        ret
+    and vpop r =
+        let ret = if !vstack_cpt > 6 then
+            pop r
+        else move r temp_registers.(!vstack_cpt + 1) in
+        vstack_cpt := !vstack_cpt - 1;
+        ret
+    in vpush, vpop;;
 
 let rec print_asm fmt a =
     match a with
