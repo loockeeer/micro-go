@@ -72,7 +72,7 @@ let env_keys e = Env.fold (fun k _ acc -> k :: acc) e []
 *)
 
 type tenv = typ Env.t
-type fenv = ident * (ident * typ) list * seq * typ list Env.t (* TODO: README *)
+type fenv = ident * (ident * typ) list * seq * typ list Env.t 
 type senv = (ident * typ * int) list (* l'entier à la fin = le décalage pour
 ce champ *)
 
