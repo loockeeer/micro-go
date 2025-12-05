@@ -2,6 +2,9 @@ EXE=_build/default/mgoc.exe
 ZIP=code.zip
 all: $(EXE)
 
+pdf:
+	pandoc README.md -o README.pdf --pdf-engine=weasyprint
+
 zip:
 	zip -r "$(ZIP)" . -x "$(ZIP)" "_build/*" ".git/*"
 
@@ -29,3 +32,4 @@ clean:
 	dune clean
 	rm -f *~ tests/*~
 	rm $(ZIP)
+	rm README.pdf

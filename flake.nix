@@ -19,6 +19,8 @@
           dune_2
           ocamlPackages.findlib
           ocamlformat
+          pandoc
+          python313Packages.weasyprint
         ];
       };
       packages.${system}.default = pkgs.ocamlPackages.buildDunePackage {
