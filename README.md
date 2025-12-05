@@ -1,7 +1,7 @@
 # Micro-Go Compiler
 
 Mon compte-rendu : le plus récent en haut, le plus vieux en bas.
-Le formattage est un peu étrange car j'ai tout écrit en Markdown en limitant à
+Le formatage est un peu étrange car j'ai tout écrit en Markdown en limitant à
 80 caractères les lignes, donc la conversion en PDF n'est pas parfaite.
 
 J'ai ajouté quelques fonctionnalités non demandées (elles sont détaillées plus bas):
@@ -10,7 +10,7 @@ J'ai ajouté quelques fonctionnalités non demandées (elles sont détaillées p
 - L'utilisation de plus de registres au lieu de la pile
 - Une représentation intermédiaire pour faciliter la compilation. Mais il me
     semble que c'était encouragé par le sujet qui suggérait de modifier l'AST
-    pour simplifier la compilation et surtout les fonction à plusieurs sorties.
+    pour simplifier la compilation et surtout les fonctions à plusieurs sorties.
     Mon IR fait essentiellement ceci en ajoutant le support des pointeurs.
 
 ## Ajout d'une optimisation des registres utilisés dans le calcul des expressions
