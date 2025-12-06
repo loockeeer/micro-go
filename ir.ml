@@ -11,23 +11,22 @@ type expr =
   | New of int
   | Call of string * expr list
   | Print of expr list
-  | GetReg (* registre t7 *)
   | Nil
   | Dummy (* variable spéciale *)
 
 and instr =
   | If of expr * seq * seq
   | For of expr * seq
+  | Inc of expr
+  | Dec of expr
   | Block of seq
   | SetVariable of string * expr
-  | SetReg of expr (* registre t7 *)
   | SetRefShift of expr * int * expr
   | Return of expr option
   | Expr of expr
 
 and seq = instr list
 
-(* GetReg/SetReg permettent des optimisations mineures *)
 type func_def =
   { fname : string
   ; params : string list
