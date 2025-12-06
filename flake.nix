@@ -19,6 +19,8 @@
           dune_2
           ocamlPackages.findlib
           ocamlformat
+
+          # Pour la génération du CR
           pandoc
           python313Packages.weasyprint
         ];
