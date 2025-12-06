@@ -99,16 +99,6 @@ Ignorer leur calcul n'était pas envisageable car le langage n'est pas purement
 fonctionnel, et donc je ne peux pas ignorer une sortie à cause de la possibilité
 d'avoir des effets.
 
-
-### Modification d'un type dans le typechecker pour l'abstraction des structures
-Afin de permettre d'abstraire les structures pendant la compilation, j'ai modifié
-l'environnement des structures dans le typechecker en ajoutant le décalage (en
-nombre d'octets) pour chaque champ :
-```ocaml
-type senv = (ident * typ * int) list (* l'entier à la fin = le décalage pour
-ce champ *)
-```
-
 ## Type de retour de check_instr et check_seq
 
 Comme on peut déclarer des variables qui vont changer l'environnement,
