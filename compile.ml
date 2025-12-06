@@ -62,8 +62,6 @@ let rec tr_expr env (e: Ir.expr) : asm * asm =
             )) (4, (Nop, Nop)) exprs) |> snd)
           $@@ jal s
   | Nil -> li t0 0, Nop
-  | GetReg ->
-          move t0 free_reg, Nop
   | Dummy -> S "li t0,dummy", Nop
   | DerefShift(expr, shift) ->
           tr_expr env expr
@@ -80,24 +78,38 @@ and tr_instr env (instr: Ir.instr) : asm * asm = match instr with
     let then_label = new_label()
     and end_label = new_label()
     in
-    tr_expr env c
-    $@@ bnez t0 then_label
+         tr_expr env c
+    $@@  bnez t0 then_label
     $@@$ tr_seq env s2
-    $@@ b end_label
-    $@@ label then_label
+    $@@  b end_label
+    $@@  label then_label
     $@@$ tr_seq env s1
-    $@@ label end_label
+    $@@  label end_label
 
   | For(c, s) ->
     let test_label = new_label()
     and code_label = new_label()
     in
-    (b    test_label
+    (    b    test_label
     @@   label code_label)
     @@$  tr_seq env s
     $@@  label test_label
     $@@$ tr_expr env c
     $@@  bnez t0 code_label
+  | Inc e | Dec e ->
+        let action = match instr with Inc _ -> 1 | _ -> (-1) in
+        (match e with
+        | Var i ->
+            let shift = Hashtbl.find env i in
+                lw t0 shift fp
+            @@  addi t0 t0 action
+            @@  sw t0 shift fp, Nop
+        | DerefShift(e, shift) ->
+                tr_expr env e
+            $@@ lw t1 shift t0
+            $@@ addi t1 t1 action
+            $@@ sw t1 shift t0
+        | _ -> failwith "runtime error")
   | Block s -> tr_seq env s
   | SetRefShift(e1, shift, e2) ->
           tr_expr env e2
@@ -118,9 +130,6 @@ and tr_instr env (instr: Ir.instr) : asm * asm = match instr with
                   le nombre de variables dans ce contexte *)
             $@@ addi sp sp (8 + 4 * (Hashtbl.length env)) 
             $@@ jr ra (* jump vers l'appelante *)
-    | SetReg e ->
-            tr_expr env e
-            $@@ move free_reg t0
     | Expr e ->
             tr_expr env e
 
